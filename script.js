@@ -1,0 +1,23 @@
+const PRODUCTS=[
+{id:1,name:"Edirne Beyaz Peyniri",cat:"Peynir",price:420,unit:"kg",icon:"🧀",featured:true},
+{id:2,name:"Koyun Peyniri",cat:"Peynir",price:480,unit:"kg",icon:"🧀",featured:true},
+{id:3,name:"Köy Tereyağı",cat:"Kahvaltılık",price:520,unit:"kg",icon:"🧈",featured:true},
+{id:4,name:"Trakya Sucuğu",cat:"Şarküteri",price:650,unit:"kg",icon:"🥩",featured:true},
+{id:5,name:"Yöresel Bal",cat:"Doğal",price:390,unit:"kg",icon:"🍯"},
+{id:6,name:"Doğal Zeytin",cat:"Kahvaltılık",price:260,unit:"kg",icon:"🫒"},
+{id:7,name:"Üzüm Pekmezi",cat:"Doğal",price:280,unit:"kg",icon:"🍇"},
+{id:8,name:"Köy Yumurtası",cat:"Kahvaltılık",price:180,unit:"15'li",icon:"🥚"}
+];
+let cart=JSON.parse(localStorage.getItem("koyumCart")||"[]");
+const money=n=>new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY"}).format(n);
+function save(){localStorage.setItem("koyumCart",JSON.stringify(cart));updateCount();}
+function updateCount(){document.querySelectorAll("[data-cart-count]").forEach(e=>e.textContent=cart.reduce((a,x)=>a+x.qty,0));}
+function addToCart(id){const p=PRODUCTS.find(x=>x.id===id);let x=cart.find(x=>x.id===id);x?x.qty++:cart.push({id,qty:1});save();showToast(p.name+" sepete eklendi");}
+function changeQty(id,delta){const x=cart.find(x=>x.id===id);if(!x)return;x.qty+=delta;if(x.qty<=0)cart=cart.filter(x=>x.id!==id);save();renderCart();}
+function productCard(p){return `<article class="product"><div class="product-img">${p.icon}${p.featured?'<span class="tag">ÇOK SEVİLEN</span>':""}</div><div class="product-body"><div class="product-cat">${p.cat}</div><h3>${p.name}</h3><div><span class="price">${money(p.price)}</span> <span class="unit">/ ${p.unit}</span></div><div class="product-actions"><button class="btn" onclick="addToCart(${p.id})">Sepete Ekle</button></div></div></article>`}
+function renderProducts(list=PRODUCTS){const e=document.querySelector("#products");if(e)e.innerHTML=list.map(productCard).join("");const f=document.querySelector("#featured");if(f)f.innerHTML=PRODUCTS.filter(p=>p.featured).map(productCard).join("");}
+function renderCart(){const e=document.querySelector("#cart");if(!e)return;if(!cart.length){e.innerHTML='<div class="empty"><h2>Sepetiniz boş</h2><p class="muted">Lezzetli ürünlerimizi keşfetmeye başlayın.</p><a class="btn" href="urunler.html">Alışverişe Başla</a></div>';return}let total=0;e.innerHTML=cart.map(x=>{const p=PRODUCTS.find(p=>p.id===x.id);const sum=p.price*x.qty;total+=sum;return `<div class="cart-item"><div class="cart-thumb">${p.icon}</div><div><b>${p.name}</b><div class="muted">${money(p.price)} / ${p.unit}</div></div><div class="qty"><button onclick="changeQty(${p.id},-1)">−</button><b>${x.qty}</b><button onclick="changeQty(${p.id},1)">+</button></div><div class="line-total"><b>${money(sum)}</b></div></div>`}).join("")+`<div class="summary"><h3>Sipariş Özeti</h3><div class="summary-line"><span>Ürünler</span><b>${money(total)}</b></div><div class="summary-line"><span>Kargo</span><span>Hesaplanacak</span></div><div class="summary-line summary-total"><span>Toplam</span><span>${money(total)}</span></div><button class="btn" style="width:100%;margin-top:12px" onclick="whatsappOrder()">WhatsApp ile Sipariş Ver</button><button class="btn" style="width:100%;margin-top:8px;background:#fff;color:#24352a;border:1px solid #ddd8ca" onclick="clearCart()">Sepeti Temizle</button></div>`}
+function clearCart(){cart=[];save();renderCart();}
+function whatsappOrder(){if(!cart.length)return;let msg="Merhaba, Köyüm Mandıra'dan sipariş vermek istiyorum:%0A"+cart.map(x=>{const p=PRODUCTS.find(p=>p.id===x.id);return encodeURIComponent("• "+p.name+" x"+x.qty+" = "+money(p.price*x.qty))}).join("%0A");window.open("https://wa.me/?text="+msg,"_blank")}
+function showToast(t){let e=document.querySelector(".toast");if(!e){e=document.createElement("div");e.className="toast";Object.assign(e.style,{position:"fixed",right:"20px",bottom:"20px",background:"#24352a",color:"#fff",padding:"13px 18px",borderRadius:"5px",zIndex:99});document.body.appendChild(e)}e.textContent=t;e.style.display="block";clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>e.style.display="none",2200)}
+document.addEventListener("DOMContentLoaded",()=>{updateCount();renderProducts();renderCart();document.querySelectorAll(".filter").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderProducts(b.dataset.cat==="Tümü"?PRODUCTS:PRODUCTS.filter(p=>p.cat===b.dataset.cat))}));const m=document.querySelector(".menu"),n=document.querySelector(".navlinks");if(m)m.addEventListener("click",()=>n.classList.toggle("open"));});
